@@ -76,3 +76,5 @@ def create(request):
     else:
         return redirect("shop:signup")
 
+def catalog_view(request):
+    pass
