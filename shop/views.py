@@ -3,11 +3,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.models import User, Group
 from shop.models import Game
-from shop.models import Game, Developer, Player
+from shop.models import Game, Developer, Player, Transaction
 
 def index(request):
     if request.method == "GET":
-        return HttpResponse("Dan Morse")
+        user = request.user
+        if not request.user.is_authenticated:
+            return redirect("shop:home")
+        if user.groups.filter(name="developers").count() != 0:
+            return redirect("shop:developer")
+        transactions = Transaction.objects.filter(player=user.player.id)
+        purchased_games = []
+        for transaction in transactions:
+            purchased_games.append(transaction.game)
+        return render(request, "shop/index.html", {"user":user, "purchased_games":purchased_games})
 
 
 def signup(request):
@@ -27,8 +36,19 @@ def login_view(request):
     return render(request, 'shop/login.html')
 
 def login_user(request):
-
-    pass
+    if request.method == "POST":
+        username = request.POST["username"]
+        password = request.POST["password"]
+        if not username or not password:
+            return render(request, "shop/login.html", {"error":"One of the fields was empty"})
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect("shop:index")
+        else:
+            return render(request, "shop/login.html", {"error":"Wrong username or password"})
+    else:
+        return redirect("shop:index")
 
 def home(request):
     if request.method == "GET":
@@ -77,4 +97,22 @@ def create(request):
         return redirect("shop:signup")
 
 def catalog_view(request):
+    pass
+
+def play_game(request, game_id):
+    pass
+
+def developer_view(request):
+    pass
+
+def search(request):
+    pass
+
+def publish(request):
+    pass
+
+def developer_games(request):
+    pass
+
+def edit_game(request, game_id):
     pass
