@@ -14,3 +14,4 @@ Inside .env define your secret key like this:
 SECRET_KEY=some_random_key
 ###Run
 $ python3 manage.py runserver
+;;
