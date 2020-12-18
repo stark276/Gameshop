@@ -1,6 +1,7 @@
 
 # Gameshop
-##Setup
+
+*Setup
 $ python3 -m venv .venv
 $ source .venv/bin/activate
 
@@ -12,6 +13,6 @@ $ touch .env
 Inside .env define your secret key like this:
 
 SECRET_KEY=some_random_key
-###Run
+*Run
 $ python3 manage.py runserver
 ;;

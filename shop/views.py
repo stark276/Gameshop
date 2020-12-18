@@ -2,9 +2,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.models import User, Group
-from shop.models import Game
-from shop.models import Game, Developer, Player, Transaction
-
+from shop.models import Game, Developer, Player,Transaction
+# Create your views here.
 def index(request):
     if request.method == "GET":
         user = request.user
@@ -17,7 +16,6 @@ def index(request):
         for transaction in transactions:
             purchased_games.append(transaction.game)
         return render(request, "shop/index.html", {"user":user, "purchased_games":purchased_games})
-
 
 def signup(request):
     if request.user.is_authenticated:
@@ -49,6 +47,7 @@ def login_user(request):
             return render(request, "shop/login.html", {"error":"Wrong username or password"})
     else:
         return redirect("shop:index")
+
 
 def home(request):
     if request.method == "GET":
@@ -103,16 +102,54 @@ def play_game(request, game_id):
     pass
 
 def developer_view(request):
-    pass
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            # Statistics for purchased games.
+            # Lets get all games if this dev
+            games = Game.objects.filter(developer=user.developer.id)
+            statistics = []
+            for game in games:
+                transactions = Transaction.objects.filter(game=game.id)
+                for transaction in transactions:
+                    statistics.append(transaction)
+            return render(request, "shop/developer.html", {"statistics": statistics})
+        else:
+            return redirect("shop:index")
 
 def search(request):
     pass
 
-def publish(request):
-    pass
+def publish_page_view(request):
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            return render(request, "shop/publish_game_form.html")
+        else:
+           return redirect("shop:index")
+
+
 
 def developer_games(request):
-    pass
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            games = user.developer.game_set.all()
+            return render(request, "shop/developer_games.html", {"games":games})
+        else:
+           return redirect("shop:index")
 
 def edit_game(request, game_id):
+    pass
+
+def publish_game(request):
+    pass
+
+def create_game(request):
     pass
