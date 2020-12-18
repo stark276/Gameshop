@@ -57,7 +57,7 @@ def home(request):
         return render(request, "shop/home.html", {"games":games})
     else:
         return HttpResponse(status=500)
-          
+
 def create(request):
     if request.method == "POST":
         username = request.POST['username']
@@ -119,6 +119,9 @@ def developer_view(request):
         else:
             return redirect("shop:index")
 
+
+
+
 def search(request):
     pass
 
@@ -133,7 +136,6 @@ def publish_page_view(request):
            return redirect("shop:index")
 
 
-
 def developer_games(request):
     if request.method == "GET":
         user = request.user
@@ -145,11 +147,11 @@ def developer_games(request):
         else:
            return redirect("shop:index")
 
+
 def edit_game(request, game_id):
     pass
 
 def publish_game(request):
     pass
-
 def create_game(request):
     pass
