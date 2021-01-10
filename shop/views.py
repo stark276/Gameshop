@@ -152,7 +152,20 @@ def developer_games(request):
 
 
 def edit_game(request, game_id):
-    pass
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name = "developers").count() == 0:
+            return redirect("shop:index")
+
+        game = get_object_or_404(Game, pk=game_id)
+        if game.developer.user_id == user.id:
+            return render(request, "shop/edit_game.html", {"game":game})
+        else:
+            return HttpResponse(status=500)
+    else:
+        return HttpResponse(status=500)
 
 def create_game(request):
     if request.method == "POST":
@@ -187,3 +200,9 @@ def create_game(request):
         return redirect("shop:developer_games")
     else:
         return redirect("shop:signup")
+
+def edit_game_update(request, game_id):
+    pass
+
+def edit_game_delete(request, game_id):
+    pass
