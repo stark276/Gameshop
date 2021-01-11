@@ -6,6 +6,7 @@ from shop.models import Game, Developer, Player,Transaction
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
+from django.conf import settings
 # Create your views here.
 def index(request):
     if request.method == "GET":
@@ -99,6 +100,17 @@ def create(request):
         return redirect("shop:signup")
 
 def catalog_view(request):
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            return redirect("shop:index")
+        games = Game.objects.all()
+        return render(request, "shop/catalog.html", {"games":games})
+    else:
+        return HttpResponse(status=500)
+def game_info(request, game_id):
     pass
 
 def play_game(request, game_id):
@@ -202,7 +214,87 @@ def create_game(request):
         return redirect("shop:signup")
 
 def edit_game_update(request, game_id):
-    pass
+    if request.method == "POST":
+        user = request.user
+        if not user.is_authenticated:
+            return HttpResponse(status=500)
+        if user.groups.filter(name="developers").count() == 0:
+            return HttpResponse(status=500)
+        game = get_object_or_404(Game, pk=game_id)
+        if game.developer.user_id == user.id:
+            title = request.POST["title"]
+            price = request.POST["price"]
+            url = request.POST["url"]
+            if not title and not price and not url:
+                return render(request, "shop/edit_game.html", {"error": "At least one of the field must be filled",
+                    "game":game})
+            if title.strip():
+                Game.objects.filter(pk=game_id).update(title=title)
+            if price.strip():
+                try:
+                    float_price = float(price)
+                except ValueError:
+                    return render(request, "shop/edit_game.html",{"error": "Price is not number",
+                        "game":game})
+                if float_price <= 0:
+                    return render(request, "shop/edit_game.html",{"error": "Price is negative",
+                        "game":game})
+                Game.objects.filter(pk=game_id).update(price=price)
+            if url.strip():
+                try:
+                    URLValidator()(url)
+                except ValidationError:
+                    return render(request, "shop/edit_game.html",{"error": "URL is malformed",
+                        "game":game})
+                try:
+                    Game.objects.filter(pk=game_id).update(url=url)
+                except (ValidationError, IntegrityError) as e:
+                    return render(request, "shop/edit_game.html",{"error": "URL is not unique",
+                        "game":game})
+            return redirect("shop:developer_games")
+        else:
+            return HttpResponse(status=500)
+    else:
+        return HttpResponse(status=500)
+
 
 def edit_game_delete(request, game_id):
-    pass
+    if request.method == "POST":
+        user = request.user
+        if not user.is_authenticated:
+            return HttpResponse(status=500)
+        if user.groups.filter(name = "developers").count() == 0:
+            return redirect("shop:index")
+        game = get_object_or_404(Game, pk=game_id)
+        if game.developer.user_id == user.id:
+            Game.objects.get(pk=game_id).delete()
+            return redirect("shop:developer_games")
+    else:
+        return HttpResponse(status=500)        
+
+
+
+def create_checkout_session():
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[
+                {
+                    'price_data': {
+                        'currency': 'usd',
+                        'unit_amount': 2000,
+                        'product_data': {
+                            'name': 'Stubborn Attachments',
+                            'images': ['https://i.imgur.com/EHyR2nP.png'],
+                        },
+                    },
+                    'quantity': 1,
+                },
+            ],
+            mode='payment',
+            success_url=YOUR_DOMAIN + '/success.html',
+            cancel_url=YOUR_DOMAIN + '/cancel.html',
+        )
+        return jsonify({'id': checkout_session.id})
+    except Exception as e:
+        return jsonify(error=str(e)), 403
