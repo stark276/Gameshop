@@ -26,7 +26,15 @@
     </div>
     <div class="navbar-end">
         <div class="navbar-item">
-           
+            <form action="{% url 'shop:search' %}" method="post">
+                {% csrf_token %}
+                <p class="control has-icons-left">
+                    <input class="input" type="text" name="q" placeholder="search">
+                    <span class="icon is-left">
+                <i class="fas fa-search"></i>
+              </span>
+                </p>
+            </form>
 
         </div>
         <div class="navbar-item">

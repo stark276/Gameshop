@@ -138,7 +138,19 @@ def developer_view(request):
 
 
 def search(request):
-    pass
+    if request.method == "POST":
+        user = request.user
+        if not user.is_authenticated:
+            return HttpResponse(status=500)
+        if user.groups.filter(name="developers").count() != 0:
+            return HttpResponse(status=500)
+        query = request.POST["q"]
+        if not query:
+            return render(request, "shop/search_result.html", {"error":"Empty search"})
+        games = Game.objects.filter(title__icontains=query)
+        return render(request, "shop/search_result.html", {"games":games, "query":query})
+    else:
+        return HttpResponse(status=500)
 
 def publish_page_view(request):
     if request.method == "GET":
@@ -274,27 +286,15 @@ def edit_game_delete(request, game_id):
 
 
 
-def create_checkout_session():
-    try:
-        checkout_session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[
-                {
-                    'price_data': {
-                        'currency': 'usd',
-                        'unit_amount': 2000,
-                        'product_data': {
-                            'name': 'Stubborn Attachments',
-                            'images': ['https://i.imgur.com/EHyR2nP.png'],
-                        },
-                    },
-                    'quantity': 1,
-                },
-            ],
-            mode='payment',
-            success_url=YOUR_DOMAIN + '/success.html',
-            cancel_url=YOUR_DOMAIN + '/cancel.html',
-        )
-        return jsonify({'id': checkout_session.id})
-    except Exception as e:
-        return jsonify(error=str(e)), 403
+def facebook_handler(request):
+    if request.method == "GET":
+        user = request.user
+        if Player.objects.filter(user=user).exists():
+            return redirect("shop:index")
+        else:
+            Player.objects.create(user=user).save()
+            player = Player.objects.filter(user=user)
+            user = player
+            return redirect("shop:index")
+    else:
+        return HttpResponse(status=500)
